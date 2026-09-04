@@ -104,7 +104,7 @@ Copy `.env.example` to `.env` if configuring optional external services or custo
 
 ```env
 # JWT_SECRET: Secret key for signing and verifying JWT tokens
-JWT_SECRET="groww_market_watchlist_jwt_secret_key_2025"
+JWT_SECRET=
 
 # Optional: SerpAPI key for live Google News search
 SERPAPI_API_KEY=
