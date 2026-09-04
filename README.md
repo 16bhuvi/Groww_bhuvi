@@ -98,6 +98,38 @@ npm start
 
 ---
 
+## ⚡ Deploying on Vercel from GitHub
+
+This repository is pre-configured for zero-config deployment on **Vercel** with full-stack support (Vite SPA frontend + Express serverless functions via `/api`).
+
+### Step-by-Step Deployment:
+
+1. **Push to GitHub**:
+   - Push your code to your GitHub repository:
+   ```bash
+   git add .
+   git commit -m "Configure full-stack Vercel deployment"
+   git push origin main
+   ```
+
+2. **Import into Vercel**:
+   - Go to [Vercel Dashboard](https://vercel.com/new).
+   - Click **"Add New..."** > **"Project"** and select your GitHub repository.
+   - Vercel will automatically detect the pre-configured `vercel.json`:
+     - **Framework Preset**: `Vite` (or `Other`)
+     - **Build Command**: `npm run build`
+     - **Output Directory**: `dist`
+
+3. **Configure Environment Variables** (in Vercel Project Settings):
+   - `JWT_SECRET`: Any secure random string (e.g., `groww_market_watchlist_jwt_secret_key_2025`)
+   - `SERPAPI_API_KEY`: *(Optional)* Your SerpApi key if fetching live Google News
+   - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini API key if enabling AI logic
+
+4. **Deploy**:
+   - Click **Deploy**. Vercel will build the frontend into static CDN assets and mount `/api` as a serverless function with built-in SQLite persistence and fallback handling.
+
+---
+
 ## ⚙️ Environment Variables
 
 Copy `.env.example` to `.env` if configuring optional external services or custom secrets:

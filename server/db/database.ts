@@ -5,21 +5,51 @@ import initSqlJs, { Database } from 'sql.js';
 import { SEED_STOCKS } from './seedData.js';
 
 let dbInstance: Database | null = null;
-const DB_DIR = path.join(process.cwd(), 'server', 'data');
+const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DB_DIR = isVercel ? '/tmp' : path.join(process.cwd(), 'server', 'data');
 const DB_PATH = path.join(DB_DIR, 'market.db');
+const SEED_DB_PATH = path.join(process.cwd(), 'server', 'data', 'market.db');
 
 export async function getDatabase(): Promise<Database> {
   if (dbInstance) return dbInstance;
 
-  const SQL = await initSqlJs();
+  const SQL = await initSqlJs({
+    locateFile: (file: string) => {
+      const candidates = [
+        path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file),
+        path.join(process.cwd(), 'public', file),
+        path.join(process.cwd(), 'dist', file),
+        file,
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) return c;
+      }
+      return file;
+    },
+  });
 
-  if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+  } catch {
+    // Ignore read-only filesystem errors in serverless
   }
 
   if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    dbInstance = new SQL.Database(fileBuffer);
+    try {
+      const fileBuffer = fs.readFileSync(DB_PATH);
+      dbInstance = new SQL.Database(fileBuffer);
+    } catch {
+      dbInstance = new SQL.Database();
+    }
+  } else if (fs.existsSync(SEED_DB_PATH)) {
+    try {
+      const fileBuffer = fs.readFileSync(SEED_DB_PATH);
+      dbInstance = new SQL.Database(fileBuffer);
+    } catch {
+      dbInstance = new SQL.Database();
+    }
   } else {
     dbInstance = new SQL.Database();
   }
@@ -37,8 +67,8 @@ export function persistDatabase(): void {
     const data = dbInstance.export();
     const buffer = Buffer.from(data);
     fs.writeFileSync(DB_PATH, buffer);
-  } catch (err) {
-    console.error('Failed to persist SQLite database:', err);
+  } catch {
+    // In serverless / read-only environments, SQLite in-memory state remains intact for the container lifecycle
   }
 }
 

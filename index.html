@@ -3,29 +3,65 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      // Gracefully handle benign Vite HMR websocket disconnects in sandbox preview environment
-      window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason ? (event.reason.message || String(event.reason)) : '';
-        if (reason.indexOf('[vite]') !== -1 || reason.indexOf('WebSocket') !== -1) {
-          event.preventDefault();
+      (function() {
+        // 1. Silent stub for Vite dev HMR WebSocket to avoid benign websocket failure logs in sandboxed dev container
+        var NativeWebSocket = window.WebSocket;
+        if (typeof NativeWebSocket !== 'undefined') {
+          window.WebSocket = function(url, protocols) {
+            var isViteHmr = protocols === 'vite-hmr' || (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1);
+            if (isViteHmr) {
+              var target = new EventTarget();
+              target.OPEN = 1;
+              target.CLOSED = 3;
+              target.CLOSING = 2;
+              target.CONNECTING = 0;
+              target.readyState = 1;
+              target.send = function() {};
+              target.close = function() {};
+              setTimeout(function() {
+                target.dispatchEvent(new Event('open'));
+              }, 0);
+              return target;
+            }
+            return new NativeWebSocket(url, protocols);
+          };
+          window.WebSocket.prototype = NativeWebSocket.prototype;
+          window.WebSocket.CONNECTING = 0;
+          window.WebSocket.OPEN = 1;
+          window.WebSocket.CLOSING = 2;
+          window.WebSocket.CLOSED = 3;
         }
-      });
-      window.addEventListener('error', function(event) {
-        var msg = event.message || '';
-        if (msg.indexOf('[vite]') !== -1 || msg.indexOf('WebSocket') !== -1) {
-          event.preventDefault();
-        }
-      });
-      var origWarn = console.warn;
-      console.warn = function() {
-        if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('[vite]') !== -1) return;
-        origWarn.apply(console, arguments);
-      };
-      var origError = console.error;
-      console.error = function() {
-        if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('[vite]') !== -1) return;
-        origError.apply(console, arguments);
-      };
+
+        // 2. Intercept any lingering benign [vite] logs from console
+        ['debug', 'info', 'warn', 'error', 'log'].forEach(function(method) {
+          var orig = console[method];
+          if (!orig) return;
+          console[method] = function() {
+            for (var i = 0; i < arguments.length; i++) {
+              var arg = arguments[i];
+              if (typeof arg === 'string' && arg.indexOf('[vite]') !== -1) return;
+              if (arg && typeof arg === 'object' && arg.message && typeof arg.message === 'string' && arg.message.indexOf('[vite]') !== -1) return;
+            }
+            orig.apply(console, arguments);
+          };
+        });
+
+        // 3. Prevent unhandled rejections or error events from Vite
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason ? (event.reason.message || String(event.reason)) : '';
+          if (reason.indexOf('[vite]') !== -1 || reason.indexOf('WebSocket') !== -1) {
+            event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+          }
+        });
+        window.addEventListener('error', function(event) {
+          var msg = event.message || '';
+          if (msg.indexOf('[vite]') !== -1 || msg.indexOf('WebSocket') !== -1) {
+            event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+          }
+        });
+      })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Groww</title>
