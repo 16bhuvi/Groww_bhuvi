@@ -43,8 +43,22 @@ Every stock is continuously evaluated against user-specific state baselines acro
 
 - **Frontend**: React 19, TypeScript, Vite 6, Tailwind CSS v4, Motion (`motion/react`), Recharts, Lucide React
 - **Backend**: Node.js, Express 4, TypeScript (`tsx`), SQLite (`sql.js`), esbuild
+- **Security & Authentication**: JSON Web Tokens (`jsonwebtoken`), password hashing (`bcryptjs`)
 - **Testing**: Vitest (`tests/changeEngine.test.ts`, `tests/dataIntegrity.test.ts`)
 - **PWA**: `vite-plugin-pwa` with manifest and service worker integration
+
+---
+
+## 🔒 Authentication & JWT Security
+
+The application supports secure, token-based authentication using **JSON Web Tokens (JWT)**:
+
+- **JWT Signing & Verification**: Signed using `JWT_SECRET` with configurable token lifetime (default 7 days).
+- **Bearer Token Authorization**: Protected endpoints extract and verify user identity via the standard `Authorization: Bearer <token>` HTTP header.
+- **Graceful Session Fallback**: If no token is provided, requests seamlessly fallback to the active demo investor session (`user_demo_1`), ensuring frictionless evaluation without blocking exploratory UI interactions.
+- **Default Demo Credentials**:
+  - **Email**: `demo@groww.in`
+  - **Password**: `Demo1234!`
 
 ---
 
@@ -86,22 +100,36 @@ npm start
 
 ## ⚙️ Environment Variables
 
-Copy `.env.example` to `.env` if configuring optional external services:
+Copy `.env.example` to `.env` if configuring optional external services or custom secrets:
 
 ```env
+# JWT_SECRET: Secret key for signing and verifying JWT tokens
+JWT_SECRET="groww_market_watchlist_jwt_secret_key_2025"
+
 # Optional: SerpAPI key for live Google News search
 SERPAPI_API_KEY=
 
 # Optional: Google Gemini API key for automated AI summaries (handled server-side)
 GEMINI_API_KEY=
+
+# PORT: Dev server port (binds to port 3000)
+PORT=3000
 ```
 
-*Note: The application operates with fallback providers and local SQLite storage out of the box if no external API keys are configured.*
+*Note: The application includes smart fallback providers and local SQLite storage out of the box if no external API keys are configured.*
 
 ---
 
 ## 📡 Key API Endpoints
 
+### Authentication
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/auth/login` | Authenticate with email & password, returns JWT token |
+| `POST` | `/api/auth/register` | Create a new user account, returns JWT token & default watchlist |
+| `GET` | `/api/auth/me` | Fetch active profile from JWT Bearer token or demo session |
+
+### Market & Watchlist
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/health` | Service health check and current server timestamp |
@@ -109,12 +137,14 @@ GEMINI_API_KEY=
 | `POST` | `/api/market/status/override` | Set simulator override for market status |
 | `GET` | `/api/market/indices` | Overview of benchmark indices (Nifty 50, Sensex) |
 | `GET` | `/api/watchlist` | Full watchlist analysis with attention scores and deltas |
-| `GET` | `/api/stocks/:id/detail` | Detailed stock analysis, technicals, and news |
-| `POST` | `/api/stocks/:id/ack` | Update user baseline checkpoint for a stock |
-| `POST` | `/api/simulate/tick` | Inject a simulated market price/volume update |
-| `GET` | `/api/watchlists` | Get user's created watchlists |
-| `POST` | `/api/watchlist/stocks` | Add a stock to an active watchlist |
-| `DELETE` | `/api/watchlist/stocks/:id` | Remove a stock from an active watchlist |
+| `GET` | `/api/stocks/:symbol` | Detailed stock analysis, technicals, chart, and news |
+| `POST` | `/api/stocks/:stockId/mark-seen` | Update user baseline checkpoint for a stock |
+| `POST` | `/api/watchlist/:id/mark-seen` | Acknowledge all stocks in a watchlist |
+| `GET` | `/api/watchlist/all` | Get user's created watchlists |
+| `POST` | `/api/watchlist` | Create a new user watchlist |
+| `POST` | `/api/watchlist/:id/stocks` | Add a stock to an active watchlist |
+| `DELETE` | `/api/watchlist/:id/stocks/:stockId` | Remove a stock from an active watchlist |
+| `POST` | `/api/simulation/trigger` | Trigger simulation scenarios (price plunges, breakouts, conflicts) |
 
 ---
 

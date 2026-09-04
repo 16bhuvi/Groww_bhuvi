@@ -2,6 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Gracefully handle benign Vite HMR websocket disconnects in sandbox preview environment
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason ? (event.reason.message || String(event.reason)) : '';
+        if (reason.indexOf('[vite]') !== -1 || reason.indexOf('WebSocket') !== -1) {
+          event.preventDefault();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        var msg = event.message || '';
+        if (msg.indexOf('[vite]') !== -1 || msg.indexOf('WebSocket') !== -1) {
+          event.preventDefault();
+        }
+      });
+      var origWarn = console.warn;
+      console.warn = function() {
+        if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('[vite]') !== -1) return;
+        origWarn.apply(console, arguments);
+      };
+      var origError = console.error;
+      console.error = function() {
+        if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('[vite]') !== -1) return;
+        origError.apply(console, arguments);
+      };
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Groww</title>
     <meta name="description" content="Smart market watchlist that surfaces what meaningfully changed since you last checked with explainable multi-signal attention scoring." />

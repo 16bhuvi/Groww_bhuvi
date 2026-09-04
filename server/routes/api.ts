@@ -2,13 +2,79 @@ import express, { Request, Response } from 'express';
 import { executeQuery, executeRun } from '../db/database.js';
 import { defaultMarketProvider } from '../providers/marketDataProvider.js';
 import { marketDataService } from '../services/marketDataService.js';
+import { authenticateUser, getUserIdFromRequest, registerUser, verifyJwtToken } from '../auth.js';
 
 export const apiRouter = express.Router();
 
-// Helper to get demo user id (or from auth token if expanded)
+// Helper to get authenticated user id (via JWT Bearer token, x-user-id header, or default demo user)
 function getUserId(req: Request): string {
-  return (req.headers['x-user-id'] as string) || 'user_demo_1';
+  return getUserIdFromRequest(req);
 }
+
+// 0. Authentication Endpoints (JWT token based)
+apiRouter.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const authResult = await authenticateUser(email, password);
+    if (!authResult) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    res.json(authResult);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/auth/register', async (req: Request, res: Response) => {
+  try {
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    const result = await registerUser(email, password, name);
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.get('/auth/me', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7).trim();
+      const payload = verifyJwtToken(token);
+      if (payload) {
+        return res.json({
+          authenticated: true,
+          user: payload,
+        });
+      }
+    }
+
+    // Default demo session
+    res.json({
+      authenticated: false,
+      user: {
+        userId: 'user_demo_1',
+        email: 'demo@groww.in',
+        name: 'Groww Investor',
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 1. Health check
 apiRouter.get('/health', (req: Request, res: Response) => {
