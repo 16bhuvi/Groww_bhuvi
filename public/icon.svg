@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="growwGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#growwGrad)" />
+  <!-- Minimalist Market Trend & Attention Pulse Node -->
+  <path d="M120 330 L210 240 L280 300 L390 170" fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" />
+  <polyline points="330,170 390,170 390,230" fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="390" cy="170" r="18" fill="#34d399" />
+  <circle cx="210" cy="240" r="14" fill="#ffffff" />
+  <circle cx="280" cy="300" r="14" fill="#ffffff" />
+</svg>

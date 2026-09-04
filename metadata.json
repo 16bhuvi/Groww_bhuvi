@@ -1,0 +1,6 @@
+{
+  "name": "Groww",
+  "description": "Smart market watchlist that surfaces what meaningfully changed since you last checked with explainable multi-signal attention scoring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
