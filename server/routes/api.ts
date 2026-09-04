@@ -245,11 +245,126 @@ apiRouter.get('/stocks/:symbol', async (req: Request, res: Response) => {
   }
 });
 
-// 9. Simulation & Edge Case Testing Controls
+// 8b. Gemini AI Factual Explanation Endpoint (Section 7)
+apiRouter.get('/stocks/:symbol/ai-explanation', async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req);
+    const explanation = await marketDataService.getStockAiExplanation(userId, req.params.symbol);
+    if (!explanation) return res.status(404).json({ error: 'Stock not found' });
+    res.json(explanation);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 9. Simulation & Edge Case Testing Controls (Section 11)
 apiRouter.post('/simulation/trigger', async (req: Request, res: Response) => {
   try {
     const { scenario } = req.body;
     const now = new Date().toISOString();
+
+    if (scenario === 'PRICE_JUMP_6') {
+      // Simulate a +6% price jump
+      await defaultMarketProvider.applyNewSnapshot({
+        symbol: 'RELIANCE',
+        timestamp: now,
+        price: 3169.5,
+        change: 185.0,
+        change_percent: 6.2,
+        volume_ratio: 2.1,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Simulated +6.2% price surge on RELIANCE with confirming volume (Score ~74/100, Significant Attention).',
+      });
+    }
+
+    if (scenario === 'VOLUME_SURGE_3X') {
+      // Simulate a 3x volume surge
+      await defaultMarketProvider.applyNewSnapshot({
+        symbol: 'SBIN',
+        timestamp: now,
+        price: 825.0,
+        volume: 75000000,
+        volume_ratio: 3.2,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Simulated 3.2× abnormal volume spike on SBIN indicating institutional block accumulation.',
+      });
+    }
+
+    if (scenario === 'DMA_200_BREAKOUT') {
+      // Simulate crossing above 200 DMA
+      await defaultMarketProvider.applyNewSnapshot({
+        symbol: 'ICICIBANK',
+        timestamp: now,
+        price: 1285.0,
+        dma_200: 1240.0,
+        dma_50: 1260.0,
+        volume_ratio: 1.8,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Simulated major long-term technical breakout above 200-day moving average on ICICIBANK.',
+      });
+    }
+
+    if (scenario === 'EARNINGS_APPROACHING') {
+      // Simulate approaching corporate earnings event
+      const twoDaysLater = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+      await executeRun(
+        `INSERT OR REPLACE INTO stock_events (id, stock_id, event_type, title, description, event_date, significance_score)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          `evt_earn_${Date.now()}`,
+          'stock_reliance',
+          'RESULTS',
+          'Q3 FY25 Board Meeting for Financial Results & Dividend',
+          'Board will consider unaudited quarterly results and interim dividend declaration',
+          twoDaysLater,
+          15,
+        ]
+      );
+
+      return res.json({
+        success: true,
+        message: 'Injected upcoming Q3 Financial Results announcement for RELIANCE (Scheduled in 2 days).',
+      });
+    }
+
+    if (scenario === 'ILLIQUID_STOCK') {
+      // Simulate an illiquid stock scenario (low volume ratio 0.15x)
+      await defaultMarketProvider.applyNewSnapshot({
+        symbol: 'ITC',
+        timestamp: now,
+        price: 462.5,
+        volume: 350000,
+        avg_volume_20d: 8500000,
+        volume_ratio: 0.15,
+      });
+
+      return res.json({
+        success: true,
+        message: 'Simulated illiquid trading session on ITC (Volume ratio 0.15× 20-day average).',
+      });
+    }
+
+    if (scenario === 'FIRST_VISIT_TEST') {
+      // Clears last-seen state for TATAMOTORS to demonstrate Section 12 First Visit handling
+      await executeRun(
+        `DELETE FROM user_stock_state WHERE stock_id = ?`,
+        ['stock_tatamotors']
+      );
+
+      return res.json({
+        success: true,
+        message: 'Cleared baseline for TATAMOTORS. Check watchlist card to see: "You\'re seeing this stock for the first time."',
+      });
+    }
 
     if (scenario === 'TATA_PLUNGE') {
       // Scenario: Tata Motors plunges 6.2%, 2.8x Vol, 50 DMA breached, Q3 Results

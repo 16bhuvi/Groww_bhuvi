@@ -2,6 +2,7 @@ import { executeQuery, executeQueryOne, executeRun } from '../db/database.js';
 import { calculateMeaningfulChange } from '../domain/changeEngine.js';
 import { defaultMarketProvider } from '../providers/marketDataProvider.js';
 import { fetchStockNewsWithCache } from '../providers/newsProvider.js';
+import { generateStockExplanation } from './geminiExplanationService.js';
 import {
   HistoricalPoint,
   MarketIndex,
@@ -86,6 +87,63 @@ export class MarketDataService {
       [selectedWl.id]
     );
 
+    const stockIds = stockRows.map(s => s.id);
+    const marketStatus = defaultMarketProvider.getMarketStatus();
+
+    // Section 19 Performance Optimization: Batch fetch user states and events to avoid N+1 queries
+    const placeholders = stockIds.map(() => '?').join(',');
+    const userStateRows = stockIds.length > 0
+      ? await executeQuery<any>(
+          `SELECT * FROM user_stock_state WHERE user_id = ? AND stock_id IN (${placeholders})`,
+          [userId, ...stockIds]
+        )
+      : [];
+
+    const userStateMap = new Map<string, UserStockState>();
+    for (const r of userStateRows) {
+      let eventIds: string[] = [];
+      let newsIds: string[] = [];
+      try {
+        eventIds = JSON.parse(r.last_seen_event_ids || '[]');
+        newsIds = JSON.parse(r.last_seen_news_ids || '[]');
+      } catch {}
+
+      userStateMap.set(r.stock_id, {
+        user_id: r.user_id,
+        stock_id: r.stock_id,
+        last_seen_at: r.last_seen_at,
+        last_seen_price: Number(r.last_seen_price),
+        last_seen_volume: Number(r.last_seen_volume),
+        last_seen_rsi: Number(r.last_seen_rsi),
+        last_seen_50_dma: Number(r.last_seen_50_dma),
+        last_seen_200_dma: Number(r.last_seen_200_dma),
+        last_seen_event_ids: eventIds,
+        last_seen_news_ids: newsIds,
+        updated_at: r.updated_at,
+      });
+    }
+
+    const eventRows = stockIds.length > 0
+      ? await executeQuery<any>(
+          `SELECT * FROM stock_events WHERE stock_id IN (${placeholders}) ORDER BY event_date DESC`,
+          stockIds
+        )
+      : [];
+    const eventsByStockId = new Map<string, StockEvent[]>();
+    for (const er of eventRows) {
+      const list = eventsByStockId.get(er.stock_id) || [];
+      list.push({
+        id: er.id,
+        stock_id: er.stock_id,
+        event_type: er.event_type,
+        title: er.title,
+        description: er.description,
+        event_date: er.event_date,
+        significance_score: Number(er.significance_score),
+      });
+      eventsByStockId.set(er.stock_id, list);
+    }
+
     const results = (
       await Promise.all(
         stockRows.map(async s => {
@@ -105,47 +163,26 @@ export class MarketDataService {
           const snapshot = await defaultMarketProvider.getSnapshot(stock.symbol);
           if (!snapshot) return null;
 
-          // Get user last seen state
-          const userStateRow = await executeQueryOne<any>(
-            `SELECT * FROM user_stock_state WHERE user_id = ? AND stock_id = ?`,
-            [userId, stock.id]
-          );
-
-          let userState: UserStockState | null = null;
-          if (userStateRow) {
-            let eventIds: string[] = [];
-            let newsIds: string[] = [];
-            try {
-              eventIds = JSON.parse(userStateRow.last_seen_event_ids || '[]');
-              newsIds = JSON.parse(userStateRow.last_seen_news_ids || '[]');
-            } catch {}
-
-            userState = {
-              user_id: userStateRow.user_id,
-              stock_id: userStateRow.stock_id,
-              last_seen_at: userStateRow.last_seen_at,
-              last_seen_price: Number(userStateRow.last_seen_price),
-              last_seen_volume: Number(userStateRow.last_seen_volume),
-              last_seen_rsi: Number(userStateRow.last_seen_rsi),
-              last_seen_50_dma: Number(userStateRow.last_seen_50_dma),
-              last_seen_200_dma: Number(userStateRow.last_seen_200_dma),
-              last_seen_event_ids: eventIds,
-              last_seen_news_ids: newsIds,
-              updated_at: userStateRow.updated_at,
-            };
-          }
-
-          // Fetch corporate events and news
-          const events = await defaultMarketProvider.getEvents(stock.id);
+          const userState = userStateMap.get(stock.id) || null;
+          const events = eventsByStockId.get(stock.id) || [];
           const news = await fetchStockNewsWithCache(stock.symbol, stock.name, stock.id);
 
-          // Run Change Detection Engine
+          // Evaluate freshness status
+          let freshness: import('../types/index.js').FreshnessStatus = 'LIVE';
+          if (!marketStatus.is_open) {
+            freshness = 'CLOSED';
+          } else if (snapshot.is_stale) {
+            freshness = 'STALE';
+          }
+
+          // Section 3: Run Change Detection Engine before state updates
           return calculateMeaningfulChange({
             stock,
             currentSnapshot: snapshot,
             userState,
             events,
             news,
+            freshnessStatus: freshness,
           });
         })
       )
@@ -172,7 +209,6 @@ export class MarketDataService {
       );
     }
 
-    const marketStatus = defaultMarketProvider.getMarketStatus();
     const indices = await defaultMarketProvider.getMarketOverview();
 
     const summary = {
@@ -332,6 +368,12 @@ export class MarketDataService {
       peers,
       marketStatus: defaultMarketProvider.getMarketStatus(),
     };
+  }
+
+  async getStockAiExplanation(userId: string, symbol: string) {
+    const detail = await this.getStockDetail(userId, symbol);
+    if (!detail) return null;
+    return generateStockExplanation(detail.changeAnalysis, detail.news);
   }
 
   async searchStocks(query: string): Promise<Stock[]> {

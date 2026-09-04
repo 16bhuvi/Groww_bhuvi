@@ -166,71 +166,123 @@ export const SimulatorLabModal: React.FC<SimulatorLabModalProps> = ({
         <div className="p-6 overflow-y-auto space-y-4 grow">
           {activeTab === 'SCENARIOS' && (
             <div className="space-y-4">
-              {/* Scenario 1: Tata Motors Plunge */}
-              <div className="p-5 rounded-2xl border-l-4 border-red-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Section 11.1: 6% Price Jump */}
+              <div className="p-4 rounded-2xl border-l-4 border-emerald-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                       Scenario 1
                     </span>
-                    <span className="font-black text-sm text-[#1A1A1A]">Tata Motors Q3 Earnings Shock</span>
+                    <span className="font-black text-sm text-[#1A1A1A]">Reliance +6.2% Price Surge</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
-                    Simulates a -6.2% price decline, 2.8x volume surge, 50 DMA breach, quarterly filing, and negative sentiment.
-                    <span className="block font-bold text-red-600 mt-0.5">
-                      Expected Output: High Attention (Score 87/100)
+                    Simulates a +6.2% price jump with confirming volume on RELIANCE.
+                    <span className="block font-bold text-emerald-700 mt-0.5">
+                      Expected Output: Significant Attention (~74/100), Price Action signal.
                     </span>
                   </p>
                 </div>
                 <button
-                  onClick={() => executeScenario('TATA_PLUNGE')}
-                  disabled={isExecuting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  Trigger Plunge
-                </button>
-              </div>
-
-              {/* Scenario 2: Infosys AI Breakout */}
-              <div className="p-5 rounded-2xl border-l-4 border-[#00D09C] border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-[#008f6b]">
-                      Scenario 2
-                    </span>
-                    <span className="font-black text-sm text-[#1A1A1A]">Infosys AI Transformation Breakout</span>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
-                    Simulates a +4.9% price surge to fresh 52-week highs, 2.0x volume ratio, enterprise AI partnership, and bullish sentiment.
-                    <span className="block font-bold text-[#008f6b] mt-0.5">
-                      Expected Output: Significant Attention (Score 68/100)
-                    </span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => executeScenario('INFY_BREAKOUT')}
+                  onClick={() => executeScenario('PRICE_JUMP_6')}
                   disabled={isExecuting}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-[#00D09C] hover:bg-[#00b889] text-black rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Trigger Breakout
+                  Trigger +6% Jump
                 </button>
               </div>
 
-              {/* Scenario 3: Out-of-Order Packet Injection */}
-              <div className="p-5 rounded-2xl border-l-4 border-amber-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Section 11.2: 3x Volume Surge */}
+              <div className="p-4 rounded-2xl border-l-4 border-amber-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                      Scenario 2
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">SBIN 3.2× Abnormal Volume Surge</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Simulates a 3.2× surge above 20-day average volume indicating block institutional accumulation.
+                    <span className="block font-bold text-amber-800 mt-0.5">
+                      Expected Output: Volume Anomaly tag and explanation bullet.
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('VOLUME_SURGE_3X')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Trigger 3× Volume
+                </button>
+              </div>
+
+              {/* Section 11.3: 200-DMA Breakout */}
+              <div className="p-4 rounded-2xl border-l-4 border-blue-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                       Scenario 3
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">ICICI Bank 200-DMA Major Breakout</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Simulates price crossing above long-term 200-day moving average (₹1,240 to ₹1,285).
+                    <span className="block font-bold text-blue-700 mt-0.5">
+                      Expected Output: "Crossed above 200 DMA" technical trigger.
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('DMA_200_BREAKOUT')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Trigger 200-DMA
+                </button>
+              </div>
+
+              {/* Section 11.4: Approaching Earnings Event */}
+              <div className="p-4 rounded-2xl border-l-4 border-indigo-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                      Scenario 4
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">Approaching Earnings / Board Meeting</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Injects an upcoming Q3 Board Results announcement scheduled in 2 days for Reliance.
+                    <span className="block font-bold text-indigo-700 mt-0.5">
+                      Expected Output: Corporate action signal (+15 pts) and upcoming date badge.
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('EARNINGS_APPROACHING')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Inject Earnings
+                </button>
+              </div>
+
+              {/* Section 11.5: Out-of-Order Packet Injection */}
+              <div className="p-4 rounded-2xl border-l-4 border-amber-600 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                      Scenario 5
                     </span>
                     <span className="font-black text-sm text-[#1A1A1A]">Out-of-Order Packet Ingestion (Race Condition)</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
                     Attempts to send a market tick with an older timestamp to simulate network jitter or delayed delivery.
                     <span className="block font-bold text-amber-800 mt-0.5">
-                      Expected Output: Clean rejection; audit log recorded.
+                      Expected Output: Clean rejection; audit log recorded. Current price remains intact.
                     </span>
                   </p>
                 </div>
@@ -244,12 +296,12 @@ export const SimulatorLabModal: React.FC<SimulatorLabModalProps> = ({
                 </button>
               </div>
 
-              {/* Scenario 4: Multi-Provider Data Conflict */}
-              <div className="p-5 rounded-2xl border-l-4 border-purple-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Section 11.6: Multi-Provider Data Conflict */}
+              <div className="p-4 rounded-2xl border-l-4 border-purple-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                      Scenario 4
+                      Scenario 6
                     </span>
                     <span className="font-black text-sm text-[#1A1A1A]">Multi-Provider Data Feed Conflict</span>
                   </div>
@@ -270,12 +322,90 @@ export const SimulatorLabModal: React.FC<SimulatorLabModalProps> = ({
                 </button>
               </div>
 
-              {/* Scenario 5: Reset Last-Seen Baseline */}
-              <div className="p-5 rounded-2xl border-l-4 border-gray-400 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Section 11.7: Illiquid Stock Scenario */}
+              <div className="p-4 rounded-2xl border-l-4 border-gray-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-200 text-gray-800">
-                      Scenario 5
+                      Scenario 7
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">Illiquid Trading Session (ITC)</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Simulates low trading volume (0.15× normal) with wide spreads.
+                    <span className="block font-bold text-gray-700 mt-0.5">
+                      Expected Output: Does not falsely elevate attention score.
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('ILLIQUID_STOCK')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gray-700 hover:bg-gray-800 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Simulate Illiquid
+                </button>
+              </div>
+
+              {/* Section 11.8: First Visit Observation Test */}
+              <div className="p-4 rounded-2xl border-l-4 border-cyan-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800">
+                      Scenario 8
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">First Visit Experience Test</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Clears last-seen state for Tata Motors to verify the Section 12 rule: "Never show misleading 0% change since last visit".
+                    <span className="block font-bold text-cyan-800 mt-0.5">
+                      Expected Output: "You're seeing this stock for the first time."
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('FIRST_VISIT_TEST')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-cyan-600 hover:bg-cyan-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Test First Visit
+                </button>
+              </div>
+
+              {/* Section 11.9: Multi-Signal High Attention Shock */}
+              <div className="p-4 rounded-2xl border-l-4 border-red-500 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                      Scenario 9
+                    </span>
+                    <span className="font-black text-sm text-[#1A1A1A]">Tata Motors Q3 Earnings Plunge (High Attention)</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
+                    Simulates -6.2% decline, 2.8× volume surge, 50 DMA breach, and Q3 filing simultaneously.
+                    <span className="block font-bold text-red-600 mt-0.5">
+                      Expected Output: High Attention (Score 87/100).
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => executeScenario('TATA_PLUNGE')}
+                  disabled={isExecuting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xs transition-colors shrink-0 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Trigger Plunge
+                </button>
+              </div>
+
+              {/* Reset Last-Seen Baseline */}
+              <div className="p-4 rounded-2xl border-l-4 border-gray-400 border-t border-r border-b border-gray-200 bg-white hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-200 text-gray-800">
+                      Reset
                     </span>
                     <span className="font-black text-sm text-[#1A1A1A]">Reset User Last-Seen Baseline</span>
                   </div>

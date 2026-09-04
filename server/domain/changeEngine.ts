@@ -1,7 +1,9 @@
 import {
   AttentionLevel,
+  FreshnessStatus,
   MarketSnapshot,
   MeaningfulChangeResult,
+  NewsStatus,
   SignalBreakdown,
   Stock,
   StockEvent,
@@ -16,6 +18,8 @@ export interface ChangeEngineInput {
   events: StockEvent[];
   news: StockNews[];
   referenceTime?: Date;
+  freshnessStatus?: FreshnessStatus;
+  newsStatus?: NewsStatus;
 }
 
 /**
@@ -49,39 +53,55 @@ export function calculateMeaningfulChange(input: ChangeEngineInput): MeaningfulC
   let pricePoints = 0;
   const priceExplanations: string[] = [];
 
-  // Calculate change since last visit (if available) or day change
+  // Handle users who have no previous state (First visit handling)
+  const isFirstVisit = !userState || !userState.last_seen_at || !userState.last_seen_price || userState.last_seen_price <= 0;
+
   let changeSinceLastSeen: number | null = null;
   let changeSinceLastSeenPercent: number | null = null;
   let timeSinceLastSeenSeconds = 0;
 
-  if (userState && userState.last_seen_price > 0) {
+  if (!isFirstVisit && userState) {
     changeSinceLastSeen = currentSnapshot.price - userState.last_seen_price;
     changeSinceLastSeenPercent = (changeSinceLastSeen / userState.last_seen_price) * 100;
     const lastSeenTime = new Date(userState.last_seen_at).getTime();
     timeSinceLastSeenSeconds = Math.max(0, Math.floor((now.getTime() - lastSeenTime) / 1000));
   } else {
-    // First time user: baseline against prev_close
-    changeSinceLastSeen = currentSnapshot.change;
-    changeSinceLastSeenPercent = currentSnapshot.change_percent;
+    // First visit: change since last seen is explicitly null to avoid misleading "0% change"
+    changeSinceLastSeen = null;
+    changeSinceLastSeenPercent = null;
+    timeSinceLastSeenSeconds = 0;
   }
 
-  const effectiveChangePercent = Math.abs(changeSinceLastSeenPercent ?? currentSnapshot.change_percent);
+  // Effective change percentage for scoring (uses user-seen diff if available, else day change)
+  const effectiveChangePercent = Math.abs(
+    changeSinceLastSeenPercent !== null ? changeSinceLastSeenPercent : currentSnapshot.change_percent
+  );
+  const effectiveDirection = (changeSinceLastSeenPercent !== null ? changeSinceLastSeenPercent : currentSnapshot.change_percent) >= 0 ? 'gained' : 'declined';
 
-  // Movement since user's last visit thresholding
+  // Movement thresholding
   if (effectiveChangePercent >= 6.0) {
     pricePoints += 24;
-    const dir = (changeSinceLastSeenPercent ?? currentSnapshot.change_percent) >= 0 ? 'gained' : 'declined';
-    priceExplanations.push(`Price ${dir} ${effectiveChangePercent.toFixed(1)}% since your previous visit`);
-    tags.push(`${effectiveChangePercent >= 0 ? '+' : ''}${effectiveChangePercent.toFixed(1)}% Move`);
+    priceExplanations.push(
+      isFirstVisit 
+        ? `Day price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% today`
+        : `Price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% since your previous visit`
+    );
+    tags.push(`${effectiveDirection === 'gained' ? '+' : '-'}${effectiveChangePercent.toFixed(1)}% Move`);
   } else if (effectiveChangePercent >= 4.0) {
     pricePoints += 18;
-    const dir = (changeSinceLastSeenPercent ?? currentSnapshot.change_percent) >= 0 ? 'gained' : 'declined';
-    priceExplanations.push(`Price ${dir} ${effectiveChangePercent.toFixed(1)}% since your previous visit`);
-    tags.push(`${effectiveChangePercent >= 0 ? '+' : ''}${effectiveChangePercent.toFixed(1)}% Move`);
+    priceExplanations.push(
+      isFirstVisit
+        ? `Day price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% today`
+        : `Price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% since your previous visit`
+    );
+    tags.push(`${effectiveDirection === 'gained' ? '+' : '-'}${effectiveChangePercent.toFixed(1)}% Move`);
   } else if (effectiveChangePercent >= 2.0) {
     pricePoints += 10;
-    const dir = (changeSinceLastSeenPercent ?? currentSnapshot.change_percent) >= 0 ? 'gained' : 'declined';
-    priceExplanations.push(`Price ${dir} ${effectiveChangePercent.toFixed(1)}% since your previous visit`);
+    priceExplanations.push(
+      isFirstVisit
+        ? `Day price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% today`
+        : `Price ${effectiveDirection} ${effectiveChangePercent.toFixed(1)}% since your previous visit`
+    );
   } else if (effectiveChangePercent >= 1.0) {
     pricePoints += 5;
   }
@@ -333,6 +353,58 @@ export function calculateMeaningfulChange(input: ChangeEngineInput): MeaningfulC
     whyItMatters.push('Asset is trading normally within historical moving averages, volume bounds, and volatility bands.');
   }
 
+  // Generate structured "Since You Last Checked" summary
+  const sinceLastCheckedSummary: string[] = [];
+  if (isFirstVisit) {
+    sinceLastCheckedSummary.push("You're seeing this stock for the first time.");
+  } else {
+    // 1. Price change bullet
+    if (changeSinceLastSeenPercent !== null && changeSinceLastSeen !== null) {
+      const sign = changeSinceLastSeenPercent >= 0 ? '+' : '';
+      const currencySign = changeSinceLastSeen >= 0 ? '+₹' : '-₹';
+      sinceLastCheckedSummary.push(
+        `${sign}${changeSinceLastSeenPercent.toFixed(1)}% price (${currencySign}${Math.abs(changeSinceLastSeen).toFixed(2)})`
+      );
+    } else {
+      sinceLastCheckedSummary.push('Price unchanged since last check');
+    }
+
+    // 2. Volume ratio bullet
+    if (volRatio >= 1.5) {
+      sinceLastCheckedSummary.push(`${volRatio.toFixed(1)}× normal volume`);
+    } else {
+      sinceLastCheckedSummary.push(`Normal volume (${volRatio.toFixed(1)}×)`);
+    }
+
+    // 3. Technical crossover/extremes bullet
+    if (wasBelow200 && isAbove200) {
+      sinceLastCheckedSummary.push('Crossed above 200 DMA');
+    } else if (wasAbove200 && isBelow200) {
+      sinceLastCheckedSummary.push('Dropped below 200 DMA');
+    } else if (wasBelow50 && isAbove50) {
+      sinceLastCheckedSummary.push('Crossed above 50 DMA');
+    } else if (wasAbove50 && isBelow50) {
+      sinceLastCheckedSummary.push('Crossed below 50 DMA');
+    } else if (currentSnapshot.rsi_14 >= 75) {
+      sinceLastCheckedSummary.push(`RSI reached overbought territory (${currentSnapshot.rsi_14.toFixed(0)})`);
+    } else if (currentSnapshot.rsi_14 <= 28) {
+      sinceLastCheckedSummary.push(`RSI reached oversold territory (${currentSnapshot.rsi_14.toFixed(0)})`);
+    }
+
+    // 4. Corporate action bullet
+    if (newEvents.length > 0) {
+      sinceLastCheckedSummary.push(`Corporate: ${newEvents[0].title}`);
+    }
+
+    // 5. News impact bullet
+    if (highImpactNews.length > 0) {
+      sinceLastCheckedSummary.push(`News: ${highImpactNews[0].title}`);
+    }
+  }
+
+  const freshnessStatus: FreshnessStatus = input.freshnessStatus || (currentSnapshot.is_stale ? 'STALE' : 'LIVE');
+  const newsStatus: NewsStatus = input.newsStatus || (news.length > 0 ? 'AVAILABLE' : 'NO_RECENT_NEWS');
+
   return {
     stock_id: stock.id,
     symbol: stock.symbol,
@@ -347,6 +419,8 @@ export function calculateMeaningfulChange(input: ChangeEngineInput): MeaningfulC
     change_since_last_seen: changeSinceLastSeen,
     change_since_last_seen_percent: changeSinceLastSeenPercent,
     time_since_last_seen_seconds: timeSinceLastSeenSeconds,
+    is_first_visit: isFirstVisit,
+    since_last_checked_summary: sinceLastCheckedSummary,
 
     change_score: totalScore,
     attention_level: attentionLevel,
@@ -361,6 +435,8 @@ export function calculateMeaningfulChange(input: ChangeEngineInput): MeaningfulC
     dma_50: currentSnapshot.dma_50,
     dma_200: currentSnapshot.dma_200,
     is_stale: currentSnapshot.is_stale,
+    freshness_status: freshnessStatus,
+    news_status: newsStatus,
     data_conflict: currentSnapshot.data_conflict || false,
     updated_at: currentSnapshot.timestamp,
 

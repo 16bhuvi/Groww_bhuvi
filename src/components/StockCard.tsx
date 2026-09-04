@@ -150,7 +150,16 @@ export const StockCard: React.FC<StockCardProps> = ({
           </div>
 
           {/* DELTA SINCE LAST VISIT: Editorial compare */}
-          {stock.change_since_last_seen_percent !== null && (
+          {stock.is_first_visit ? (
+            <div className="text-right">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                First observation
+              </span>
+              <div className="text-[11px] font-medium text-gray-400 mt-0.5">
+                Baseline set at current price
+              </div>
+            </div>
+          ) : stock.change_since_last_seen_percent !== null ? (
             <div className="text-right">
               <div
                 className={`text-xs font-mono font-bold flex items-center justify-end gap-0.5 ${
@@ -161,19 +170,37 @@ export const StockCard: React.FC<StockCardProps> = ({
                 {isPositiveVisit ? '+' : ''}
                 {stock.change_since_last_seen_percent.toFixed(2)}%
                 <span className="text-[11px] text-gray-500 font-normal">
-                  ({isPositiveVisit ? '+' : ''}₹{(stock.change_since_last_seen ?? 0).toFixed(2)})
+                  ({isPositiveVisit ? '+' : ''}₹{Math.abs(stock.change_since_last_seen ?? 0).toFixed(2)})
                 </span>
               </div>
-              <div className="text-[11px] font-medium text-gray-400 italic underline decoration-dotted mt-0.5">
-                Compare with last seen (₹{(stock.last_seen_price || stock.current_price).toFixed(2)})
+              <div className="text-[11px] font-medium text-gray-400 italic mt-0.5">
+                vs last checked (₹{(stock.last_seen_price || stock.current_price).toFixed(2)})
               </div>
             </div>
-          )}
+          ) : null}
         </div>
+
+        {/* SINCE YOU LAST CHECKED: Structured Summary Bullets (Section 2 & 4) */}
+        {stock.since_last_checked_summary && stock.since_last_checked_summary.length > 0 && (
+          <div className="mt-3.5 p-3 rounded-xl bg-gray-50/90 border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-gray-400" />
+              Since you last checked:
+            </p>
+            <ul className="space-y-1">
+              {stock.since_last_checked_summary.slice(0, 3).map((bullet, idx) => (
+                <li key={idx} className="text-xs text-[#1A1A1A] flex items-start gap-1.5 font-medium leading-relaxed">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00D09C] shrink-0 mt-1.5" />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Meaningful Tags */}
         {stock.tags.length > 0 && (
-          <div className="mt-3.5 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {stock.tags.map((tag, idx) => (
               <span
                 key={idx}
@@ -191,7 +218,7 @@ export const StockCard: React.FC<StockCardProps> = ({
           </div>
         )}
 
-        {/* EXPLAINABILITY DRAWER: "Why this matters" */}
+        {/* EXPLAINABILITY DRAWER: "Why this matters" (Section 5) */}
         <div className="mt-3.5 pt-3 border-t border-gray-100">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1">
             <Info className="w-3 h-3 text-gray-400" />

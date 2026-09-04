@@ -98,6 +98,9 @@ export interface SignalBreakdown {
   details: string;
 }
 
+export type FreshnessStatus = 'LIVE' | 'STALE' | 'CLOSED' | 'DELAYED';
+export type NewsStatus = 'AVAILABLE' | 'TEMPORARILY_UNAVAILABLE' | 'NO_RECENT_NEWS';
+
 export interface MeaningfulChangeResult {
   stock_id: string;
   symbol: string;
@@ -113,6 +116,8 @@ export interface MeaningfulChangeResult {
   change_since_last_seen: number | null;
   change_since_last_seen_percent: number | null;
   time_since_last_seen_seconds: number;
+  is_first_visit: boolean;
+  since_last_checked_summary: string[];
   
   // Score & Classification
   change_score: number; // 0 - 100
@@ -130,6 +135,8 @@ export interface MeaningfulChangeResult {
   dma_50: number;
   dma_200: number;
   is_stale: boolean;
+  freshness_status: FreshnessStatus;
+  news_status: NewsStatus;
   data_conflict: boolean;
   updated_at: string;
   

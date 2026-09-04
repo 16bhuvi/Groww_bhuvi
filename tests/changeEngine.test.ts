@@ -232,4 +232,51 @@ describe('Meaningful Change Engine Unit Tests', () => {
     expect(['SIGNIFICANT', 'HIGH_ATTENTION']).toContain(stockB.attention_level);
     expect(['NORMAL', 'LOW']).toContain(stockA.attention_level); // price only, no confirming signals
   });
+
+  it('4. First-time visit handles baseline properly without misleading 0% change', () => {
+    const firstVisitResult = calculateMeaningfulChange({
+      stock: sampleStock,
+      currentSnapshot: normalSnapshot,
+      userState: null, // First time visit
+      events: [],
+      news: [],
+    });
+
+    expect(firstVisitResult.is_first_visit).toBe(true);
+    expect(firstVisitResult.change_since_last_seen).toBeNull();
+    expect(firstVisitResult.change_since_last_seen_percent).toBeNull();
+    expect(firstVisitResult.since_last_checked_summary[0]).toContain("You're seeing this stock for the first time");
+  });
+
+  it('5. Generates structured Since You Last Checked summary with price, volume, and technical triggers', () => {
+    const returningUserResult = calculateMeaningfulChange({
+      stock: sampleStock,
+      currentSnapshot: {
+        ...normalSnapshot,
+        price: 780, // +4% change
+        volume_ratio: 2.2,
+      },
+      userState: {
+        user_id: 'u1',
+        stock_id: 'stock_tatamotors',
+        last_seen_at: new Date(Date.now() - 7200000).toISOString(),
+        last_seen_price: 750,
+        last_seen_volume: 1000000,
+        last_seen_rsi: 50,
+        last_seen_50_dma: 740,
+        last_seen_200_dma: 710,
+        last_seen_event_ids: [],
+        last_seen_news_ids: [],
+        updated_at: new Date().toISOString(),
+      },
+      events: [],
+      news: [],
+    });
+
+    expect(returningUserResult.is_first_visit).toBe(false);
+    expect(returningUserResult.change_since_last_seen).toBe(30);
+    expect(returningUserResult.change_since_last_seen_percent).toBe(4);
+    expect(returningUserResult.since_last_checked_summary.some(s => s.includes('+4.0% price'))).toBe(true);
+    expect(returningUserResult.since_last_checked_summary.some(s => s.includes('2.2× normal volume'))).toBe(true);
+  });
 });
